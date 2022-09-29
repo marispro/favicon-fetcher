@@ -115,7 +115,11 @@ class HttpDriver implements Fetcher
      */
     private function parseLinkFromElement(string $linkElement): string
     {
-        $stringUntilHref = strstr($linkElement, 'href=\'');
+        $stringUntilHref = strstr($linkElement, 'href="');
+		if(!$stringUntilHref)
+		{
+			$stringUntilHref = strstr($linkElement, "href='");
+		}
 
 		// replacing quotes to delimiter
 		$stringUntilHref = str_replace(['"', '\''], '|', $stringUntilHref);
