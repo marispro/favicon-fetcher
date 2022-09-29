@@ -53,7 +53,7 @@ class HttpDriver implements Fetcher
      */
     private function attemptToResolveFromUrl(string $url, string $faviconUrl): ?Favicon
     {
-        $response = Http::withOptions(['verify' => false])->get($faviconUrl);
+        $response = Http::get($faviconUrl);
 
         return $response->successful() ? new Favicon($url, $faviconUrl, $this) : null;
     }
@@ -69,7 +69,7 @@ class HttpDriver implements Fetcher
      */
     private function attemptToResolveFromHeadTags(string $url): ?string
     {
-        $response = Http::withOptions(['verify' => false])->get($url);
+        $response = Http::get($url);
 
         if (! $response->successful()) {
             return null;
@@ -90,7 +90,7 @@ class HttpDriver implements Fetcher
      */
     private function findLinkElement(string $html): ?string
     {
-        $pattern = '/<link rel="(icon|shortcut icon)"[^>]*>/i';
+        $pattern = '/<link.*rel=["\'](icon|shortcut icon)["\'][^>]*>/i';
 
         preg_match($pattern, $html, $linkElement);
 
@@ -102,7 +102,7 @@ class HttpDriver implements Fetcher
         // through and only grab the "shortcut icon" or "icon" link.
         return collect(explode('>', $linkElement[0]))
             ->filter(
-                fn (string $link): bool => Str::is(['*rel="shortcut icon"*', '*rel="icon"*'], $link)
+				fn (string $link): bool => Str::is(['*rel=*shortcut icon*', '*rel=*icon*'], $link)
             )
             ->first();
     }
@@ -115,9 +115,12 @@ class HttpDriver implements Fetcher
      */
     private function parseLinkFromElement(string $linkElement): string
     {
-        $stringUntilHref = strstr($linkElement, 'href="');
+        $stringUntilHref = strstr($linkElement, 'href=\'');
 
-        return explode('"', $stringUntilHref)[1];
+		// replacing quotes to delimiter
+		$stringUntilHref = str_replace(['"', '\''], '|', $stringUntilHref);
+
+        return explode('|', $stringUntilHref)[1];
     }
 
     /**
