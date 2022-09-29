@@ -141,6 +141,35 @@ class Favicon
             ->append('/')
             ->append($filename)
             ->append('.')
-            ->append(File::extension($this->faviconUrl));
+            ->append($this->guessFileExtension());
+    }
+
+    protected function guessFileExtension(): string
+    {
+        $default = File::extension($this->faviconUrl);
+
+        if (Str::of($this->faviconUrl)->endsWith(['png', 'ico', 'svg'])) {
+            return $default;
+        }
+
+        return $this->guessFileExtensionFromMimeType() ?? $default;
+    }
+
+    protected function guessFileExtensionFromMimeType(): ?string
+    {
+        $faviconMimetype = Http::get($this->faviconUrl)->header('content-type');
+
+        $mimeToExtensionMap = [
+            'image/x-icon' => 'ico',
+            'image/x-ico' => 'ico',
+            'image/vnd.microsoft.icon' => 'ico',
+            'image/jpeg' => 'jpeg',
+            'image/pjpeg' => 'jpeg',
+            'image/png' => 'png',
+            'image/x-png' => 'png',
+            'image/svg+xml' => 'svg',
+        ];
+
+        return $mimeToExtensionMap[$faviconMimetype] ?? null;
     }
 }
